@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo 4 - Gênio Quiz do Amor</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #2C3E50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #gameCanvas {
+            background-color: #34495E;
+            height: 100vh;
+            width: calc(100vh * (400 / 600));
+            max-width: 100vw;
+            max-height: calc(100vw * (600 / 400));
+            box-shadow: 0 0 25px rgba(0,0,0,0.9);
+        }
+
+        #roundScreen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0,0,0,0.85);
+            color: white;
+            z-index: 10;
+        }
+        #roundScreen h1 {
+            font-size: 60px;
+            color: #E74C3C;
+            text-shadow: 0 0 20px #fff;
+            animation: popIn 1s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <audio autoplay loop src="assets/pou.mp3"></audio>
+
+    <div id="roundScreen">
+        <h1>ROUND 4</h1>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const roundScreen = document.getElementById('roundScreen');
+
+    let gameActive = false;
+    setTimeout(() => {
+        roundScreen.style.display = 'none';
+        gameActive = true; 
+    }, 2000);
+
+    // Perguntas do Gênio Quiz
+    const questions = [
+        {
+            q: "1 - Qual o formato da terra?",
+            options: ["Balls", "Plana"],
+            correct: 1 // Plana
+        },
+        {
+            q: "2 - Qual era o título da terceira frase?",
+            options: ["Determinação", "Promessa", "Sacrifício", "Ronaldo"],
+            correct: 1 // Promessa
+        },
+        {
+            q: "3 - Qual a comida favorita do Spacer?",
+            options: ["Pudim", "Arroz Doce", "Chocolate", "Clarinha"],
+            correct: 3 // Clarinha
+        },
+        {
+            q: "4 - Qual a recompensa por acertar?",
+            options: ["Nada", "Mais perguntas"],
+            correct: 1 // Mais perguntas
+        },
+        {
+            q: "5 - 45+904-5*45/7+36*6-65/544+53",
+            options: ["cu", "4515289/3808"],
+            correct: 0 // cu
+        }
+    ];
+
+    let currentQ = 0;
+    let messageText = "";
+
+    // Converte toque para as coordenadas internas do Canvas
+    function getPointerPos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX = evt.clientX;
+        let clientY = evt.clientY;
+
+        if (evt.touches && evt.touches.length > 0) {
+            clientX = evt.touches[0].clientX;
+            clientY = evt.touches[0].clientY;
+        }
+
+        return {
+            x: (clientX - rect.left) / (rect.width / canvas.width),
+            y: (clientY - rect.top) / (rect.height / canvas.height)
+        };
+    }
+
+    function handleTouch(e) {
+        if (!gameActive) return;
+        const pos = getPointerPos(e);
+
+        const q = questions[currentQ];
+        let startY = 220;
+        let boxH = 50;
+        let spacing = 20;
+
+        for (let i = 0; i < q.options.length; i++) {
+            let boxY = startY + i * (boxH + spacing);
+            // Verifica se clicou dentro do botão da opção
+            if (pos.x >= 40 && pos.x <= 360 && pos.y >= boxY && pos.y <= boxY + boxH) {
+                if (i === q.correct) {
+                    // Acertou!
+                    currentQ++;
+                    if (currentQ >= questions.length) {
+                        gameActive = false;
+                        messageText = "MUITO BEM! Indo para o Jogo 5... 🎉";
+                        setTimeout(() => {
+                            window.location.href = "jogo5.html"; // Joga direto para o jogo 5!
+                        }, 1200);
+                    }
+                } else {
+                    // Errou! Trollada de Gênio Quiz (reinicia)
+                    messageText = "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK";
+                    gameActive = false;
+                    setTimeout(() => {
+                        currentQ = 0;
+                        messageText = "";
+                        gameActive = true;
+                    }, 1500);
+                }
+            }
+        }
+    }
+
+    canvas.addEventListener('click', handleTouch);
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleTouch(e);
+    }, {passive: false});
+
+    function drawButton(text, y) {
+        ctx.fillStyle = '#2980B9';
+        ctx.beginPath();
+        ctx.roundRect(40, y, 320, 50, 12);
+        ctx.fill();
+
+        ctx.strokeStyle = '#1ABC9C';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 200, y + 25);
+    }
+
+    function draw() {
+        // Fundo do Quiz
+        ctx.fillStyle = '#2C3E50';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Painel da Pergunta
+        ctx.fillStyle = '#ECF0F1';
+        ctx.beginPath();
+        ctx.roundRect(20, 30, 360, 150, 15);
+        ctx.fill();
+        ctx.strokeStyle = '#BDC3C7';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Número da fase / Título
+        ctx.fillStyle = '#E74C3C';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`QUESTÃO ${currentQ + 1} DE ${questions.length}`, 200, 60);
+
+        // Texto da Pergunta
+        ctx.fillStyle = '#2C3E50';
+        ctx.font = 'bold 18px Arial';
+        let qText = questions[currentQ].q;
+        
+        if (qText.length > 35) {
+            ctx.font = 'bold 14px Arial';
+        }
+        ctx.fillText(qText, 200, 115);
+
+        // Desenhar Opções
+        let q = questions[currentQ];
+        let startY = 220;
+        let boxH = 50;
+        let spacing = 20;
+
+        for (let i = 0; i < q.options.length; i++) {
+            let boxY = startY + i * (boxH + spacing);
+            drawButton(q.options[i], boxY);
+        }
+
+        // Se houver mensagem de erro ou vitória na tela
+        if (messageText !== "") {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = messageText.includes("ERROU") ? '#E74C3C' : '#2ECC71';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(messageText, 200, 300);
+        }
+    }
+
+    function loop() {
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+
+</script>
+</body>
+</html>

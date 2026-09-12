@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo 5 - Adivinhe o Presente</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #4A148C;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #gameCanvas {
+            background-color: #6A1B9A;
+            height: 100vh;
+            width: calc(100vh * (400 / 600));
+            max-width: 100vw;
+            max-height: calc(100vw * (600 / 400));
+            box-shadow: 0 0 25px rgba(0,0,0,0.9);
+        }
+
+        #roundScreen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0,0,0,0.85);
+            color: white;
+            z-index: 10;
+        }
+        #roundScreen h1 {
+            font-size: 60px;
+            color: #FFEB3B;
+            text-shadow: 0 0 20px #FF9800;
+            animation: popIn 1s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <audio autoplay loop src="assets/pou.mp3"></audio>
+
+    <div id="roundScreen">
+        <h1>ROUND 5</h1>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const roundScreen = document.getElementById('roundScreen');
+
+    let gameActive = false;
+    setTimeout(() => {
+        roundScreen.style.display = 'none';
+        startRound();
+    }, 2000);
+
+    let score = 0;
+    const targetScore = 3;
+    
+    const slotX = [70, 200, 330];
+    const boxY = 300;
+    const boxW = 80;
+    const boxH = 100;
+
+    let boxes = [
+        { id: 0, x: slotX[0], targetX: slotX[0], hasCard: false },
+        { id: 1, x: slotX[1], targetX: slotX[1], hasCard: false },
+        { id: 2, x: slotX[2], targetX: slotX[2], hasCard: false }
+    ];
+
+    let gameState = 'SHOWING'; // SHOWING, MIXING, WAITING, RESULT
+    let messageText = "";
+    let messageColor = "#FFF";
+    
+    let mixCount = 0;
+    let maxMixes = 4; // Quantidade de trocas suaves
+
+    function startRound() {
+        gameActive = true;
+        gameState = 'SHOWING';
+        
+        let cardIndex = Math.floor(Math.random() * 3);
+        boxes.forEach((b, i) => {
+            b.hasCard = (i === cardIndex);
+            b.x = slotX[i];
+            b.targetX = slotX[i];
+        });
+
+        // A carta fica aparecendo ACIMA por 2.5 segundos ANTES de começar a misturar
+        setTimeout(() => {
+            if (!gameActive) return;
+            gameState = 'MIXING';
+            mixCount = 0;
+            doMix();
+        }, 2500);
+    }
+
+    function doMix() {
+        if (mixCount >= maxMixes) {
+            gameState = 'WAITING';
+            return;
+        }
+
+        let idx1 = Math.floor(Math.random() * 3);
+        let idx2;
+        do {
+            idx2 = Math.floor(Math.random() * 3);
+        } while (idx1 === idx2);
+
+        let tempTarget = boxes[idx1].targetX;
+        boxes[idx1].targetX = boxes[idx2].targetX;
+        boxes[idx2].targetX = tempTarget;
+
+        let tempBox = boxes[idx1];
+        boxes[idx1] = boxes[idx2];
+        boxes[idx2] = tempBox;
+
+        mixCount++;
+
+        // Velocidade calma e devagar
+        setTimeout(() => {
+            if (gameActive) doMix();
+        }, 850);
+    }
+
+    function getPointerPos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX = evt.clientX;
+        let clientY = evt.clientY;
+
+        if (evt.touches && evt.touches.length > 0) {
+            clientX = evt.touches[0].clientX;
+            clientY = evt.touches[0].clientY;
+        }
+
+        return {
+            x: (clientX - rect.left) / (rect.width / canvas.width),
+            y: (clientY - rect.top) / (rect.height / canvas.height)
+        };
+    }
+
+    function handleClick(e) {
+        if (!gameActive || gameState !== 'WAITING') return;
+        const pos = getPointerPos(e);
+
+        for (let i = 0; i < boxes.length; i++) {
+            let b = boxes[i];
+            let boxLeft = b.x - boxW / 2;
+            let boxRight = b.x + boxW / 2;
+            let boxTop = boxY - boxH / 2;
+            let boxBottom = boxY + boxH / 2;
+
+            if (pos.x >= boxLeft && pos.x <= boxRight && pos.y >= boxTop && pos.y <= boxBottom) {
+                gameState = 'RESULT';
+                
+                if (b.hasCard) {
+                    score++;
+                    messageText = `ACERTOU! (${score}/${targetScore}) 🎉`;
+                    messageColor = '#2ECC71';
+
+                    setTimeout(() => {
+                        if (score >= targetScore) {
+                            gameActive = false;
+                            messageText = "YAAAAAAY";
+                            setTimeout(() => {
+                                window.location.href = "carta.html";
+                            }, 1500);
+                        } else {
+                            messageText = "";
+                            startRound();
+                        }
+                    }, 1200);
+
+                } else {
+                    messageText = "Nah nah\nReiniciando o Round...";
+                    messageColor = '#E74C3C';
+
+                    setTimeout(() => {
+                        score = 0;
+                        messageText = "";
+                        startRound();
+                    }, 2000);
+                }
+            }
+        }
+    }
+
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleClick(e);
+    }, {passive: false});
+
+    function draw() {
+        ctx.fillStyle = '#4A148C';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#FFEB3B';
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Ache a Carta Secreta!', 200, 50);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '18px Arial';
+        ctx.fillText(`Acertos: ${score} / ${targetScore}`, 200, 85);
+
+        boxes.forEach(b => {
+            b.x += (b.targetX - b.x) * 0.15; // Movimento suave
+        });
+
+        // Desenhar Caixas
+        boxes.forEach(b => {
+            ctx.save();
+            ctx.translate(b.x, boxY);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.beginPath(); ctx.ellipse(0, boxH/2 + 5, boxW/2, 8, 0, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = '#E91E63';
+            ctx.beginPath();
+            ctx.roundRect(-boxW/2, -boxH/2, boxW, boxH, 10);
+            ctx.fill();
+            ctx.strokeStyle = '#880E4F';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.fillStyle = '#FFEB3B';
+            ctx.fillRect(-10, -boxH/2, 20, boxH);
+            ctx.fillRect(-boxW/2, -10, boxW, 20);
+
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎀', 0, -boxH/2 - 10);
+
+            ctx.restore();
+        });
+
+        // DESENHAR A CARTA ACIMA DO PRESENTE CORRETO NA FASE SHOWING
+        if (gameState === 'SHOWING') {
+            boxes.forEach(b => {
+                if (b.hasCard) {
+                    ctx.save();
+                    // Posição ACIMA da caixa (boxY - altura da caixa - margem)
+                    let cardY = boxY - (boxH / 2) - 35;
+                    
+                    ctx.font = '45px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('💌', b.x, cardY);
+                    ctx.restore();
+                }
+            });
+        }
+
+        // Avisos inferiores
+        if (gameState === 'SHOWING') {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(0, 470, 400, 60);
+            ctx.fillStyle = '#FFEB3B';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Decore onde está a carta!', 200, 500);
+        } else if (gameState === 'MIXING') {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(0, 470, 400, 60);
+            ctx.fillStyle = '#FF9800';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Misturando devagar...', 200, 500);
+        } else if (gameState === 'WAITING') {
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(0, 470, 400, 60);
+            ctx.fillStyle = '#2ECC71';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Onde está a carta? Escolha!', 200, 500);
+        }
+
+        if (messageText !== "") {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = messageColor;
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            let lines = messageText.split('\n');
+            if (lines.length > 1) {
+                ctx.fillText(lines[0], 200, 280);
+                ctx.font = '18px Arial';
+                ctx.fillText(lines[1], 200, 320);
+            } else {
+                ctx.fillText(messageText, 200, 300);
+            }
+        }
+    }
+
+    function loop() {
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+
+</script>
+</body>
+</html>

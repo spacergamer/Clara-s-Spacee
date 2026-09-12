@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uma cartinha para Clara 💌</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,.7), transparent 28%),
+      radial-gradient(circle at 80% 80%, rgba(255,210,225,.45), transparent 30%),
+      #f7e9d8;
+    font-family: Georgia, "Times New Roman", serif;
+    color: #4d302d;
+  }
+
+  .scene {
+    width: min(92vw, 980px);
+    height: min(88vh, 700px);
+    display: grid;
+    place-items: center;
+    perspective: 1400px;
+  }
+
+  .letter {
+    position: relative;
+    width: min(88vw, 720px);
+    height: min(70vh, 480px);
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform .8s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .letter:hover { transform: translateY(-6px) rotateX(2deg); }
+
+  .paper {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background:
+      linear-gradient(rgba(130,90,60,.035) 1px, transparent 1px),
+      #fffdf5;
+    background-size: 100% 27px;
+    box-shadow: 0 24px 60px rgba(74,45,34,.25);
+    border: 1px solid rgba(100,60,40,.15);
+    overflow: hidden;
+  }
+
+  .front {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 40px;
+    z-index: 3;
+    transform-origin: top;
+    transition: transform 1s cubic-bezier(.65,.05,.36,1), box-shadow 1s;
+  }
+
+  .front::after {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border: 1px dashed rgba(150,95,90,.28);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .front h1 {
+    margin: 0 0 10px;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: normal;
+  }
+
+  .front p {
+    margin: 0;
+    font-size: 1.05rem;
+    opacity: .72;
+  }
+
+  .seal {
+    margin: 24px auto 0;
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #c85b70;
+    color: white;
+    font-size: 27px;
+    box-shadow: 0 7px 15px rgba(120,50,60,.25);
+  }
+
+  .inside {
+    z-index: 1;
+    padding: clamp(28px, 5vw, 60px);
+    overflow-y: auto;
+  }
+
+  .inside h2 {
+    margin: 0 0 28px;
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
+    font-weight: normal;
+  }
+
+  .inside p {
+    font-size: clamp(1rem, 1.8vw, 1.18rem);
+    line-height: 1.9;
+    margin: 0 0 22px;
+  }
+
+  .password {
+    margin: 30px auto 10px;
+    max-width: 620px;
+    padding: 22px;
+    text-align: center;
+    border: 2px dashed #c85b70;
+    border-radius: 12px;
+    background: rgba(200,91,112,.07);
+  }
+
+  .password strong {
+    display: block;
+    font-family: "Courier New", monospace;
+    font-size: clamp(1rem, 2.4vw, 1.35rem);
+    letter-spacing: .03em;
+    color: #8e3047;
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 9px 15px;
+    border-radius: 999px;
+    background: rgba(77,48,45,.86);
+    color: white;
+    font: 13px Arial, sans-serif;
+    transition: opacity .4s;
+    pointer-events: none;
+  }
+
+  .open .front {
+    transform: rotateX(-150deg);
+    box-shadow: 0 8px 12px rgba(74,45,34,.08);
+  }
+
+  .open .hint { opacity: 0; }
+
+  .confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .piece {
+    position: absolute;
+    top: -20px;
+    width: 8px;
+    height: 13px;
+    animation: fall 3.5s linear forwards;
+    opacity: .85;
+  }
+
+  @keyframes fall {
+    to {
+      transform: translate3d(var(--x), 110vh, 0) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .scene { height: 82vh; }
+    .letter { height: 62vh; }
+    .inside { padding: 28px; }
+  }
+</style>
+</head>
+
+<body>
+<div class="scene">
+  <div class="letter" id="letter" role="button" tabindex="0"
+       aria-label="Abrir carta">
+    <section class="paper inside">
+      <h2>Querida Clara,</h2>
+
+      <p>
+        Parece que você chegou ao final :3 E meus parabéns, sério.
+      </p>
+
+      <p>
+        E aqui, eu poderia lhe entregar essa cartinha...
+        Mas, creio que basta de palavras certo? feliz aniversário meu bem,
+        você é tipo, a coisa mais importante que eu tenho na vida, e, o prêmio
+        que você realmente merece, é no mínimo, poder ouvir de mim mesmo o que
+        eu tenho a dizer ^^
+      </p>
+
+      <p>
+        Por isso, apenas envie-e isso a mim:
+      </p>
+
+      <div class="password">
+        <strong>"ACABEI DE CAGAR NAS CALÇAS"</strong>
+        <span>sim, é a senha.</span>
+      </div>
+    </section>
+
+    <section class="paper front">
+      <div>
+        <h1>Para a Clara 💌</h1>
+        <p>Uma última cartinha...</p>
+        <div class="seal">♥</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="hint">Clique na carta para abrir</div>
+<div class="confetti" id="confetti"></div>
+
+<script>
+  const letter = document.getElementById("letter");
+  const confetti = document.getElementById("confetti");
+
+  function openLetter() {
+    const wasClosed = !letter.classList.contains("open");
+    letter.classList.toggle("open");
+
+    if (wasClosed) celebrate();
+  }
+
+  function celebrate() {
+    confetti.innerHTML = "";
+    const symbols = ["♥", "✦", "•", "♡"];
+
+    for (let i = 0; i < 45; i++) {
+      const piece = document.createElement("div");
+      piece.className = "piece";
+      piece.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      piece.style.left = Math.random() * 100 + "vw";
+      piece.style.fontSize = (10 + Math.random() * 14) + "px";
+      piece.style.animationDelay = Math.random() * .8 + "s";
+      piece.style.setProperty("--x", (Math.random() * 240 - 120) + "px");
+      confetti.appendChild(piece);
+    }
+
+    setTimeout(() => confetti.innerHTML = "", 4500);
+  }
+
+  letter.addEventListener("click", openLetter);
+  letter.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openLetter();
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo do Anjinho</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #87CEEB; /* Azul céu */
+            overflow: hidden;
+            touch-action: none;
+            font-family: sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #87CEEB;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            pointer-events: none;
+        }
+        .btn {
+            width: 75px;
+            height: 75px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 4px solid #333;
+            border-radius: 50%;
+            font-size: 35px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            user-select: none;
+            box-shadow: 0 5px 0 #555; /* Botão mais gordinho */
+        }
+        .btn:active {
+            background-color: #ddd;
+            transform: translateY(5px);
+            box-shadow: 0 0px 0 #555;
+        }
+        #levelText {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 26px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 2px 2px white;
+        }
+    </style>
+</head>
+<body>
+    <audio autoplay loop src="assets/pou.mp3"></audio>
+
+    <div id="levelText">Fase 1</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    
+    <div id="controls">
+        <div class="btn" id="btnLeft">←</div>
+        <div class="btn" id="btnJump">↑</div>
+        <div class="btn" id="btnRight">→</div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const levelText = document.getElementById('levelText');
+
+    function resizeCanvas() {
+        const scale = Math.min(window.innerWidth / 400, window.innerHeight / 600);
+        canvas.style.width = (400 * scale) + 'px';
+        canvas.style.height = (600 * scale) + 'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // IMAGENS
+    const imgAnjinho = new Image();
+    imgAnjinho.src = 'fotos/anjinho.jpeg';
+    
+    const imgEu = new Image();
+    imgEu.src = 'fotos/eu.jpeg';
+
+    // FÍSICA ESTILO MARIO (Mais leve e controlável)
+    let currentLevel = 0;
+    const gravity = 0.4;       // Era 0.6 (agora cai mais devagar)
+    let keys = { left: false, right: false, up: false };
+
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+    const btnJump = document.getElementById('btnJump');
+
+    function addControl(element, key) {
+        element.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
+        element.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+        element.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
+        element.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+        element.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
+    }
+
+    addControl(btnLeft, 'left');
+    addControl(btnRight, 'right');
+    addControl(btnJump, 'up');
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') keys.left = true;
+        if (e.key === 'ArrowRight') keys.right = true;
+        if (e.key === 'ArrowUp') keys.up = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft') keys.left = false;
+        if (e.key === 'ArrowRight') keys.right = false;
+        if (e.key === 'ArrowUp') keys.up = false;
+    });
+
+    // JOGADOR
+    const player = {
+        x: 50, y: 50, width: 40, height: 40,
+        vx: 0, vy: 0, speed: 5, jumpPower: -10, // Pulo mais forte, anda mais rápido
+        grounded: false,
+        scaleX: 1, scaleY: 1
+    };
+
+    const goal = { x: 0, y: 0, width: 50, height: 50 };
+
+    // FASES - Plataformas maiores e mais fáceis de pular
+    const levels = [
+        // Fase 1 - Escadinha fácil
+        {
+            start: {x: 20, y: 480},
+            goal: {x: 320, y: 190},
+            platforms: [
+                {x: 0, y: 550, w: 400, h: 50}, // Chão completo
+                {x: 120, y: 460, w: 120, h: 20},
+                {x: 260, y: 370, w: 120, h: 20},
+                {x: 120, y: 280, w: 120, h: 20},
+                {x: 280, y: 240, w: 120, h: 20}
+            ]
+        },
+        // Fase 2 - Ziguezague
+        {
+            start: {x: 20, y: 480},
+            goal: {x: 20, y: 100},
+            platforms: [
+                {x: 0, y: 550, w: 400, h: 50}, // Chão completo
+                {x: 180, y: 460, w: 150, h: 20},
+                {x: 20,  y: 370, w: 150, h: 20},
+                {x: 180, y: 280, w: 150, h: 20},
+                {x: 20,  y: 190, w: 150, h: 20},
+                {x: 0,   y: 150, w: 80,  h: 20}
+            ]
+        },
+        // Fase 3 - O salto final (plataformas bem seguras)
+        {
+            start: {x: 20, y: 480},
+            goal: {x: 330, y: 60},
+            platforms: [
+                {x: 0, y: 550, w: 150, h: 50},  // Chão seguro pra começar
+                {x: 180, y: 470, w: 220, h: 20}, 
+                {x: 50,  y: 380, w: 120, h: 20},
+                {x: 220, y: 290, w: 120, h: 20},
+                {x: 50,  y: 200, w: 120, h: 20},
+                {x: 250, y: 110, w: 150, h: 20}
+            ]
+        }
+    ];
+
+    function loadLevel(index) {
+        if (index >= levels.length) {
+            window.location.href = "jogo2.html";
+            return;
+        }
+        const lvl = levels[index];
+        player.x = lvl.start.x;
+        player.y = lvl.start.y; 
+        player.vx = 0;
+        player.vy = 0;
+        player.scaleX = 1;
+        player.scaleY = 1;
+        
+        goal.x = lvl.goal.x;
+        goal.y = lvl.goal.y;
+        
+        levelText.innerText = "Fase " + (index + 1);
+    }
+
+    function update() {
+        if (keys.left) player.vx = -player.speed;
+        else if (keys.right) player.vx = player.speed;
+        else player.vx = 0;
+
+        // Animação de Pulo
+        if (keys.up && player.grounded) {
+            player.vy = player.jumpPower;
+            player.grounded = false;
+            player.scaleX = 0.6; // Magrinho
+            player.scaleY = 1.4; // Esticado
+        }
+
+        player.vy += gravity;
+        player.x += player.vx;
+        player.y += player.vy;
+
+        // Efeito "Mola" suave
+        player.scaleX += (1 - player.scaleX) * 0.15;
+        player.scaleY += (1 - player.scaleY) * 0.15;
+
+        // Limites da tela
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+        
+        // Se cair, reinicia
+        if (player.y > canvas.height) {
+            loadLevel(currentLevel);
+        }
+
+        player.grounded = false;
+        const currentPlatforms = levels[currentLevel].platforms;
+
+        for (let i = 0; i < currentPlatforms.length; i++) {
+            let p = currentPlatforms[i];
+            
+            // Colisão mais amigável
+            if (player.x < p.x + p.w && player.x + player.width > p.x &&
+                player.y < p.y + p.h && player.y + player.height > p.y) {
+                
+                if (player.vy > 0 && player.y + player.height - player.vy <= p.y + 15) {
+                    player.grounded = true;
+                    
+                    // Achata quando cai
+                    if (player.vy > 4) {
+                        player.scaleX = 1.3;
+                        player.scaleY = 0.7;
+                    }
+                    
+                    player.vy = 0;
+                    player.y = p.y - player.height;
+                } 
+                else if (player.vy < 0 && player.y - player.vy >= p.y + p.h - 10) {
+                    player.vy = 0;
+                    player.y = p.y + p.h;
+                }
+            }
+        }
+
+        // Encostou no objetivo (Ganhou)
+        if (player.x < goal.x + goal.width && player.x + player.width > goal.x &&
+            player.y < goal.y + goal.height && player.y + player.height > goal.y) {
+            currentLevel++;
+            loadLevel(currentLevel);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Nuvens no fundo (estilo Mario)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath(); ctx.arc(100, 150, 30, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(130, 150, 40, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(160, 150, 30, 0, Math.PI*2); ctx.fill();
+        
+        ctx.beginPath(); ctx.arc(300, 300, 20, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(325, 300, 30, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(350, 300, 20, 0, Math.PI*2); ctx.fill();
+
+        // Desenha Plataformas
+        const currentPlatforms = levels[currentLevel].platforms;
+        ctx.fillStyle = '#8B4513'; // Cor de terra
+        for (let i = 0; i < currentPlatforms.length; i++) {
+            let p = currentPlatforms[i];
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            
+            // Graminha em cima da plataforma
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(p.x, p.y, p.w, 8);
+            ctx.fillStyle = '#8B4513'; // Voltar a cor de terra pro próximo
+            
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(p.x, p.y, p.w, p.h);
+        }
+
+        // Desenha Objetivo (eu.jpeg)
+        if (imgEu.complete && imgEu.naturalWidth !== 0) {
+            ctx.drawImage(imgEu, goal.x, goal.y, goal.width, goal.height);
+        } else {
+            ctx.fillStyle = '#FF4081';
+            ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+        }
+
+        // Desenha Jogador (anjinho.jpeg)
+        ctx.save();
+        ctx.translate(player.x + player.width / 2, player.y + player.height);
+        ctx.scale(player.scaleX, player.scaleY);
+        
+        if (imgAnjinho.complete && imgAnjinho.naturalWidth !== 0) {
+            ctx.drawImage(imgAnjinho, -player.width / 2, -player.height, player.width, player.height);
+        } else {
+            ctx.fillStyle = '#FFEB3B';
+            ctx.fillRect(-player.width / 2, -player.height, player.width, player.height);
+        }
+        ctx.restore();
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loadLevel(0);
+    loop();
+
+</script>
+</body>
+</html>
