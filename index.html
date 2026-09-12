@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clara's Home Page</title><link rel="stylesheet" href="style.css">
+</head>
+<body><div class="site">
+<header class="header">
+  <a href="index.html" class="brand"><img class="brand-art" src="assets/hello_kitty.png" alt="Hello Kitty"><div class="brand-title">Clara's Home Page</div></a>
+  <nav class="nav">
+    <a href="index.html">INICIAL</a><a href="jogar.html">JOGAR</a><a href="info.html">INFO</a><a href="fotos.html">FOTOS</a><a href="frases.html">FRASES</a><a href="playlist.html">PLAYLIST</a><button class="mysteryBtn">???</button>
+  </nav>
+</header>
+
+<main id="home">
+<section class="pink-page home-page">
+  <div class="pink-title">Seja bem-vinda!</div>
+  <div class="side-photos"><img class="tiny-photo" src="assets/ciel.png" alt="Ciel"><img class="tiny-photo" src="assets/sunoo.png" alt="Sunoo"></div>
+  <div class="home-strip"><h2>Feliz aniversário!!!</h2></div>
+  <div class="home-text">Olá, meu bem! Como você está? Parece que <b>HOJE</b><br>é o seu aniversário, não? E em homenagem a esse<br>incrível dia, fiz este pequeno blog para você :)<br>Espere que goste!!!</div>
+  <div class="home-strip"><h2>Você quer jogar um jogo?</h2></div>
+  <div class="home-text">Nesta sessão, deve encontrar alguns mini-jogos,<br>cada um deles divididos em pequenas rodadas.<br>Será que você consegue chegar até o final? (Algo<br>te aguarda lá...)</div>
+  <div class="home-strip"><h2>Fotinhas</h2></div>
+  <div class="home-text">Uma pequena galeria onde você pode observar<br>obras de arte da natureza, e criar o seu próprio<br>muralzinho! (Ele ficará salvo!)</div>
+  <div class="home-strip"><h2>Dedicações</h2></div>
+  <div class="home-text">Uma pequena playlist de dedicates á você :3<br>Em geral, músicas que me fazem lembrar de você,<br>ou me fazem te ver nelas &lt;3</div>
+</section>
+<section class="pink-page sessions-page">
+  <div class="pink-title">SESSÕES</div>
+  <a class="session-row" href="jogar.html">JOGAR</a><a class="session-row" href="index.html">BLOG</a><a class="session-row" href="info.html">INFO</a><a class="session-row" href="fotos.html">GALERIA</a><a class="session-row" href="frases.html">FRASES</a><a class="session-row" href="playlist.html">PLAYLIST</a>
+</section>
+</main>
+
+<footer><div class="music-toggle"><label><input type="checkbox" id="musicToggle"> Ligar música</label><audio id="homeMusic" loop src="musicas/lease.mp3"></audio></div><nav class="footer-nav"><a href="index.html">INICIAL</a><a href="jogar.html">JOGAR</a><a href="info.html">INFO</a><a href="fotos.html">FOTOS</a><a href="frases.html">FRASES</a><a href="playlist.html">PLAYLIST</a><button class="mysteryBtn">???</button></nav><div>©Copyright 2006 Todos os direitos reservados - Clara's Space</div></footer>
+</div>
+<div id="videoOverlay" class="video-overlay hidden"><video id="mysteryVideo" playsinline><source src="videos/kiss.mp4" type="video/mp4"></video><button id="skipVideo">PULAR ×</button></div>
+<script src="script.js"></script></body></html>
